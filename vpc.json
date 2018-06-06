@@ -1,0 +1,61 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "",
+  "Metadata": {},
+  "Parameters": {},
+  "Mappings": {},
+  "Conditions": {},
+  "Resources": {
+    "JobAssistVpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "171.31.0.0/16",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "JobAssistVpc"
+          },
+          {
+            "Key": "Batch",
+            "Value": "6PM"
+          }
+        ]
+      }
+    },
+    "PublicSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": "ap-south-1a",
+        "MapPublicIpOnLaunch": true,
+        "VpcId": {
+          "Ref": "JobAssistVpc"
+        },
+        "CidrBlock": "171.31.1.0/24",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "PublicSubnet1"
+          }
+        ]
+      }
+    },
+    "PublicSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": "ap-south-1b",
+        "MapPublicIpOnLaunch": true,
+        "VpcId": {
+          "Ref": "JobAssistVpc"
+        },
+        "CidrBlock": "171.31.2.0/24",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "PublicSubnet2"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {}
+}
