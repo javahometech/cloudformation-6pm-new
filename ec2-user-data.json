@@ -3,6 +3,11 @@
   "Description": "",
   "Metadata": {},
   "Parameters": {
+    "WebServerPort": {
+      "Description": "Choose Port for EC2 Instance",
+      "Type": "String",
+      "Default": "80"
+    },
     "VpcCidr": {
       "Description": "Choose Cidr for VPC",
       "Type": "String",
@@ -210,8 +215,53 @@
             "Fn::Join": [
               "",
               [
-                "#!/bin/bash -ex",
-                "-"
+                "#!/bin/bash -ex \n",
+                "yum install httpd -y \n",
+                "echo 'Welcome to CloudFormation' > /var/www/html/index.html \n",
+                "service httpd start \n",
+                "chkconfig httpd on \n"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "Instance2": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnet2"
+        },
+        "KeyName": {
+          "Ref": "InstanceKeyName"
+        },
+        "ImageId": {
+          "Ref": "InstanceAMIId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceTypeParameter"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "WebServersSG"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Instance2"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -ex \n",
+                "yum install httpd -y \n",
+                "echo 'Welcome to CloudFormation Instance-2' > /var/www/html/index.html \n",
+                "service httpd start \n",
+                "chkconfig httpd on \n"
               ]
             ]
           }
@@ -252,6 +302,54 @@
             "Value": "WebServersSG"
           }
         ]
+      }
+    },
+    "ElasticLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": [
+          {
+            "Ref": "PublicSubnet1"
+          },
+          {
+            "Ref": "PublicSubnet2"
+          }
+        ],
+        "Instances": [
+          {
+            "Ref": "Instance1"
+          },
+          {
+            "Ref": "Instance2"
+          }
+        ],
+        "Listeners": [
+          {
+            "LoadBalancerPort": "80",
+            "InstancePort": {
+              "Ref": "WebServerPort"
+            },
+            "Protocol": "HTTP"
+          }
+        ],
+        "HealthCheck": {
+          "Target": {
+            "Fn::Join": [
+              "",
+              [
+                "HTTP:",
+                {
+                  "Ref": "WebServerPort"
+                },
+                "/index.html"
+              ]
+            ]
+          },
+          "HealthyThreshold": "2",
+          "UnhealthyThreshold": "2",
+          "Interval": "10",
+          "Timeout": "2"
+        }
       }
     }
   },
