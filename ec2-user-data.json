@@ -35,11 +35,6 @@
       "Description": "Choose Your private key",
       "Type": "AWS::EC2::KeyPair::KeyName"
     },
-    "InstanceAMIId": {
-      "Description": "Choose AMI for Instance",
-      "Type": "String",
-      "Default": "ami-76d6f519"
-    },
     "InstanceTypeParameter": {
       "Type": "String",
       "Default": "t2.micro",
@@ -49,10 +44,41 @@
         "m1.large"
       ],
       "Description": "Enter t2.micro, m1.small, or m1.large. Default is t2.micro."
+    },
+    "stackenv": {
+      "Description": "Choose Environment",
+      "Type": "String",
+      "AllowedValues": [
+        "dev",
+        "stg",
+        "prod"
+      ],
+      "Default": "dev"
     }
   },
-  "Mappings": {},
-  "Conditions": {},
+  "Mappings": {
+    "RegionMap": {
+      "us-east-1": {
+        "64": "ami-14c5486b"
+      },
+      "us-west-1": {
+        "64": "ami-25110f45"
+      },
+      "ap-south-1": {
+        "64": "ami-76d6f519"
+      }
+    }
+  },
+  "Conditions": {
+    "ProdEnvironment": {
+      "Fn::Equals": [
+        "prod",
+        {
+          "Ref": "stackenv"
+        }
+      ]
+    }
+  },
   "Resources": {
     "JobAssistVpc": {
       "Type": "AWS::EC2::VPC",
@@ -194,7 +220,13 @@
           "Ref": "InstanceKeyName"
         },
         "ImageId": {
-          "Ref": "InstanceAMIId"
+          "Fn::FindInMap": [
+            "RegionMap",
+            {
+              "Ref": "AWS::Region"
+            },
+            "64"
+          ]
         },
         "InstanceType": {
           "Ref": "InstanceTypeParameter"
@@ -236,7 +268,13 @@
           "Ref": "InstanceKeyName"
         },
         "ImageId": {
-          "Ref": "InstanceAMIId"
+          "Fn::FindInMap": [
+            "RegionMap",
+            {
+              "Ref": "AWS::Region"
+            },
+            "64"
+          ]
         },
         "InstanceType": {
           "Ref": "InstanceTypeParameter"
@@ -306,6 +344,7 @@
     },
     "ElasticLoadBalancer": {
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Condition": "ProdEnvironment",
       "Properties": {
         "Subnets": [
           {
@@ -353,5 +392,31 @@
       }
     }
   },
-  "Outputs": {}
+  "Outputs": {
+    "ElbDnsName": {
+      "Condition": "ProdEnvironment",
+      "Value": {
+        "Fn::GetAtt": [
+          "ElasticLoadBalancer",
+          "DNSName"
+        ]
+      }
+    },
+    "PublicIpInstance1": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Instance1",
+          "PublicIp"
+        ]
+      }
+    },
+    "PublicIpInstance2": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Instance2",
+          "PublicIp"
+        ]
+      }
+    }
+  }
 }
